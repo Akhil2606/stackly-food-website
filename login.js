@@ -8,6 +8,8 @@ const resetSection = document.querySelector("#reset-password-section");
 const resetForm = document.querySelector("#reset-password-form");
 const backButton = document.querySelector("#back-to-login");
 
+const MODE_STORAGE_KEY = "stackly-account-mode";
+
 let mode = "login";
 let busy = false;
 
@@ -24,32 +26,56 @@ function setMode(next) {
 
   const registering = mode === "register";
 
+  // Save selected mode
+  try {
+    localStorage.setItem(MODE_STORAGE_KEY, mode);
+
+    const pageUrl = new URL(window.location.href);
+    pageUrl.searchParams.set("mode", mode);
+
+    history.replaceState(
+      null,
+      "",
+      pageUrl.pathname + pageUrl.search + pageUrl.hash,
+    );
+  } catch (error) {
+    console.error("Unable to save account mode:", error);
+  }
+
+  // Update tabs
   document.querySelectorAll(".account-tabs [data-mode]").forEach((button) => {
     const active = button.dataset.mode === mode;
     button.classList.toggle("selected", active);
     button.setAttribute("aria-pressed", String(active));
   });
 
+  // Name field
   if (form.elements.name) {
     form.elements.name.disabled = !registering;
 
     const nameField = document.querySelector("#name-field");
 
-    if (nameField) nameField.hidden = !registering;
+    if (nameField) {
+      nameField.hidden = !registering;
+    }
   }
 
+  // Confirm password field
   if (form.elements.confirm) {
     form.elements.confirm.disabled = !registering;
     form.elements.confirm.required = registering;
 
     const confirmField = document.querySelector("#confirm-field");
 
-    if (confirmField) confirmField.hidden = !registering;
+    if (confirmField) {
+      confirmField.hidden = !registering;
+    }
 
     form.elements.confirm.value = "";
     form.elements.confirm.setCustomValidity("");
   }
 
+  // Reset password fields
   form.elements.password.value = "";
   form.elements.password.type = "password";
 
@@ -69,6 +95,7 @@ function setMode(next) {
     ? "new-password"
     : "current-password";
 
+  // Update page text
   document.querySelector("#account-kicker").textContent = registering
     ? "CREATE YOUR ACCOUNT"
     : "GOOD TO SEE YOU AGAIN";
@@ -87,18 +114,29 @@ function setMode(next) {
     ? 'Already registered? <button type="button" data-mode="login">Go to Login</button>'
     : 'New to Stackly? <button type="button" data-mode="register">Create an account</button>';
 
+  // Show Forgot Password only in Login mode
   forgotRow.hidden = registering;
+
   resetSection.hidden = true;
   form.hidden = false;
+
+  // Restore other login elements
+  document.querySelector(".account-tabs").hidden = false;
+  document.querySelector("#account-kicker").hidden = false;
+  document.querySelector("#account-title").hidden = false;
+  document.querySelector("#account-description").hidden = false;
+  document.querySelector("#account-switch").hidden = false;
+
+  const socialContainer = document.querySelector("#social-auth-container");
+
+  if (socialContainer) {
+    socialContainer.hidden = false;
+  }
 
   status.textContent = "";
   status.className = "";
 
   clearInvalidInputs();
-
-  try {
-    history.replaceState(null, "", registering ? "signup.html" : "login.html");
-  } catch {}
 }
 
 // Login and signup navigation
@@ -106,7 +144,9 @@ function setMode(next) {
 document.querySelector(".account-card").addEventListener("click", (event) => {
   const button = event.target.closest("[data-mode]");
 
-  if (button) setMode(button.dataset.mode);
+  if (button) {
+    setMode(button.dataset.mode);
+  }
 });
 
 // Password visibility
@@ -300,7 +340,6 @@ forgotButton.addEventListener("click", () => {
   if (mode !== "login" || busy) return;
 
   form.hidden = true;
-
   forgotRow.hidden = true;
 
   document.querySelector(".account-tabs").hidden = true;
@@ -309,9 +348,13 @@ forgotButton.addEventListener("click", () => {
   document.querySelector("#account-description").hidden = true;
   document.querySelector("#account-switch").hidden = true;
 
-  resetSection.hidden = false;
+  const socialContainer = document.querySelector("#social-auth-container");
 
-  resetForm.elements["reset-email"].value = form.elements.email.value.trim();
+  if (socialContainer) {
+    socialContainer.hidden = true;
+  }
+
+  resetSection.hidden = false;
 
   resetForm.reset();
 
@@ -337,6 +380,12 @@ backButton.addEventListener("click", () => {
   document.querySelector("#account-description").hidden = false;
   document.querySelector("#account-switch").hidden = false;
 
+  const socialContainer = document.querySelector("#social-auth-container");
+
+  if (socialContainer) {
+    socialContainer.hidden = false;
+  }
+
   resetForm.reset();
 
   status.textContent = "";
@@ -353,9 +402,7 @@ resetForm.addEventListener("submit", async (event) => {
   if (busy) return;
 
   const email = resetForm.elements["reset-email"].value.trim();
-
   const password = resetForm.elements["new-password"].value;
-
   const confirmPassword = resetForm.elements["confirm-password"].value;
 
   const resetSubmit = resetForm.querySelector('button[type="submit"]');
@@ -400,9 +447,13 @@ resetForm.addEventListener("submit", async (event) => {
     document.querySelector("#account-description").hidden = false;
     document.querySelector("#account-switch").hidden = false;
 
-    resetForm.reset();
+    const socialContainer = document.querySelector("#social-auth-container");
 
-    setMode("login");
+    if (socialContainer) {
+      socialContainer.hidden = false;
+    }
+
+    resetForm.reset();
 
     form.elements.email.value = email;
 
@@ -453,14 +504,21 @@ document
 // INITIAL PAGE MODE
 
 const requestedMode = new URLSearchParams(location.search).get("mode");
+const savedMode = localStorage.getItem(MODE_STORAGE_KEY);
 
 const isSignupPage = location.pathname.toLowerCase().includes("signup.html");
 
-setMode(
-  requestedMode === "register" || (requestedMode !== "login" && isSignupPage)
-    ? "register"
-    : "login",
-);
+let initialMode;
+
+if (requestedMode === "login" || requestedMode === "register") {
+  initialMode = requestedMode;
+} else if (savedMode === "login" || savedMode === "register") {
+  initialMode = savedMode;
+} else {
+  initialMode = isSignupPage ? "register" : "login";
+}
+
+setMode(initialMode);
 
 // CHECK EXISTING SESSION
 
