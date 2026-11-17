@@ -158,5 +158,30 @@
     write(accounts);
     return current();
   }
-  window.StacklyAccounts = { register, login, current, logout, storageKey, updateProfile };
+  async function socialLogin({ email, name, provider = 'social' }) {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!normalizedEmail) throw new Error('Invalid account email from ' + provider);
+    const accounts = read();
+    let account = accounts.find(a => a.email === normalizedEmail);
+    if (!account) {
+      const saltBytes = globalThis.crypto?.getRandomValues
+        ? crypto.getRandomValues(new Uint8Array(16))
+        : Array.from({ length: 16 }, () => Math.floor(Math.random() * 256));
+      const salt = hex(saltBytes);
+      const randomSecret = hex(globalThis.crypto?.getRandomValues ? crypto.getRandomValues(new Uint8Array(24)) : Array.from({ length: 24 }, () => Math.floor(Math.random() * 256)));
+      const passwordHash = await derive(randomSecret, salt);
+      const idBytes = globalThis.crypto?.getRandomValues
+        ? crypto.getRandomValues(new Uint8Array(16))
+        : Array.from({ length: 16 }, () => Math.floor(Math.random() * 256));
+      const id = hex(idBytes);
+      const displayName = String(name || '').trim() || normalizedEmail.split('@')[0] || 'User';
+      account = { id, name: displayName, email: normalizedEmail, salt, passwordHash, provider };
+      accounts.push(account);
+      write(accounts);
+    }
+    try { sessionStorage.setItem(sessionKey, JSON.stringify({ id: account.id, expires: Date.now() + 86400000 })); }
+    catch { throw new Error('Your browser could not start a session. Please enable site storage.'); }
+    return { user: { id: account.id, name: account.name, email: account.email } };
+  }
+  window.StacklyAccounts = { register, login, current, logout, storageKey, updateProfile, socialLogin };
 })();
