@@ -91,8 +91,12 @@ function setMode(next) {
     ? 'Already registered? <button type="button" data-mode="login">Go to Login</button>'
     : 'New to Stackly? <button type="button" data-mode="register">Create an account</button>';
 
-  forgotRow.hidden = registering;
-  resetSection.hidden = true;
+  if (forgotRow) {
+    forgotRow.hidden = registering;
+  }
+  if (resetSection) {
+    resetSection.hidden = true;
+  }
   form.hidden = false;
 
   document.querySelector(".account-tabs").hidden = false;
@@ -101,7 +105,9 @@ function setMode(next) {
   document.querySelector("#account-description").hidden = false;
   document.querySelector("#account-switch").hidden = false;
 
-  const socialContainer = document.querySelector("#social-auth-container");
+  const socialContainer =
+    document.querySelector("#social-auth-container") ||
+    document.querySelector(".social-auth-container");
 
   if (socialContainer) {
     socialContainer.hidden = false;
@@ -318,142 +324,228 @@ form.addEventListener("submit", async (event) => {
 
 // FORGOT PASSWORD
 
-forgotButton.addEventListener("click", () => {
-  if (mode !== "login" || busy) return;
+if (forgotButton) {
+  forgotButton.addEventListener("click", () => {
+    if (mode !== "login" || busy) return;
 
-  form.hidden = true;
-  forgotRow.hidden = true;
+    form.hidden = true;
+    if (forgotRow) {
+      forgotRow.hidden = true;
+    }
 
-  document.querySelector(".account-tabs").hidden = true;
-  document.querySelector("#account-kicker").hidden = true;
-  document.querySelector("#account-title").hidden = true;
-  document.querySelector("#account-description").hidden = true;
-  document.querySelector("#account-switch").hidden = true;
+    const tabs = document.querySelector(".account-tabs");
+    if (tabs) tabs.hidden = true;
+    const kicker = document.querySelector("#account-kicker");
+    if (kicker) kicker.hidden = true;
+    const title = document.querySelector("#account-title");
+    if (title) title.hidden = true;
+    const desc = document.querySelector("#account-description");
+    if (desc) desc.hidden = true;
+    const acctSwitch = document.querySelector("#account-switch");
+    if (acctSwitch) acctSwitch.hidden = true;
 
-  const socialContainer = document.querySelector("#social-auth-container");
+    const socialContainer =
+      document.querySelector("#social-auth-container") ||
+      document.querySelector(".social-auth-container");
 
-  if (socialContainer) {
-    socialContainer.hidden = true;
-  }
+    if (socialContainer) {
+      socialContainer.hidden = true;
+    }
 
-  resetSection.hidden = false;
+    if (resetSection) {
+      resetSection.hidden = false;
+    }
 
-  resetForm.reset();
+    if (resetForm) {
+      resetForm.reset();
+      resetForm.querySelectorAll("input").forEach((inp) => {
+        if (inp.name === "new-password" || inp.name === "confirm-password") {
+          inp.type = "password";
+        }
+      });
+      resetForm.querySelectorAll(".password-toggle").forEach((btn) => {
+        btn.setAttribute("aria-pressed", "false");
+        btn.setAttribute("aria-label", "Show password");
+        btn.title = "Show password";
+      });
 
-  resetForm.elements["reset-email"].value = form.elements.email.value.trim();
+      if (resetForm.elements["reset-email"]) {
+        resetForm.elements["reset-email"].value = (
+          form.elements.email?.value || ""
+        ).trim();
+      }
+    }
 
-  status.textContent = "";
-  status.className = "";
+    status.textContent = "";
+    status.className = "";
 
-  resetForm.elements["reset-email"].focus();
-});
+    if (resetForm?.elements["reset-email"]) {
+      resetForm.elements["reset-email"].focus();
+    }
+  });
+}
 
 // BACK TO LOGIN
 
-backButton.addEventListener("click", () => {
-  resetSection.hidden = true;
+if (backButton) {
+  backButton.addEventListener("click", () => {
+    if (resetSection) {
+      resetSection.hidden = true;
+    }
 
-  form.hidden = false;
-  forgotRow.hidden = false;
-
-  document.querySelector(".account-tabs").hidden = false;
-  document.querySelector("#account-kicker").hidden = false;
-  document.querySelector("#account-title").hidden = false;
-  document.querySelector("#account-description").hidden = false;
-  document.querySelector("#account-switch").hidden = false;
-
-  const socialContainer = document.querySelector("#social-auth-container");
-
-  if (socialContainer) {
-    socialContainer.hidden = false;
-  }
-
-  resetForm.reset();
-
-  status.textContent = "";
-  status.className = "";
-
-  form.elements.email.focus();
-});
-
-// RESET PASSWORD
-
-resetForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  if (busy) return;
-
-  const email = resetForm.elements["reset-email"].value.trim();
-  const password = resetForm.elements["new-password"].value;
-  const confirmPassword = resetForm.elements["confirm-password"].value;
-
-  const resetSubmit = resetForm.querySelector('button[type="submit"]');
-
-  clearInvalidInputs();
-
-  if (password.length < 8 || password.length > 128) {
-    status.textContent = "Password must contain 8-128 characters.";
-    status.className = "status-invalid";
-    return;
-  }
-
-  if (password !== confirmPassword) {
-    status.textContent = "New passwords do not match.";
-    status.className = "status-invalid";
-
-    resetForm.elements["confirm-password"].classList.add("input-invalid");
-
-    return;
-  }
-
-  busy = true;
-  resetSubmit.disabled = true;
-
-  status.textContent = "Updating your password...";
-  status.className = "";
-
-  try {
-    await accountRequest("resetPassword", {
-      email,
-      password,
-    });
-
-    resetSection.hidden = true;
     form.hidden = false;
-    forgotRow.hidden = false;
+    if (forgotRow) {
+      forgotRow.hidden = false;
+    }
 
-    document.querySelector(".account-tabs").hidden = false;
-    document.querySelector("#account-kicker").hidden = false;
-    document.querySelector("#account-title").hidden = false;
-    document.querySelector("#account-description").hidden = false;
-    document.querySelector("#account-switch").hidden = false;
+    const tabs = document.querySelector(".account-tabs");
+    if (tabs) tabs.hidden = false;
+    const kicker = document.querySelector("#account-kicker");
+    if (kicker) kicker.hidden = false;
+    const title = document.querySelector("#account-title");
+    if (title) title.hidden = false;
+    const desc = document.querySelector("#account-description");
+    if (desc) desc.hidden = false;
+    const acctSwitch = document.querySelector("#account-switch");
+    if (acctSwitch) acctSwitch.hidden = false;
 
-    const socialContainer = document.querySelector("#social-auth-container");
+    const socialContainer =
+      document.querySelector("#social-auth-container") ||
+      document.querySelector(".social-auth-container");
 
     if (socialContainer) {
       socialContainer.hidden = false;
     }
 
-    resetForm.reset();
+    if (resetForm) {
+      resetForm.reset();
+      resetForm.querySelectorAll("input").forEach((inp) => {
+        if (inp.name === "new-password" || inp.name === "confirm-password") {
+          inp.type = "password";
+        }
+      });
+      resetForm.querySelectorAll(".password-toggle").forEach((btn) => {
+        btn.setAttribute("aria-pressed", "false");
+        btn.setAttribute("aria-label", "Show password");
+        btn.title = "Show password";
+      });
+    }
 
-    setMode("login");
+    status.textContent = "";
+    status.className = "";
 
-    form.elements.email.value = email;
+    if (form.elements.email) {
+      form.elements.email.focus();
+    }
+  });
+}
 
-    status.textContent =
-      "Password reset successful! Please log in with your new password.";
+// RESET PASSWORD
 
-    status.className = "status-success";
+if (resetForm) {
+  resetForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-    form.elements.password.focus();
-  } catch (error) {
-    status.textContent = error.message;
-    status.className = "status-invalid";
-  } finally {
-    busy = false;
-    resetSubmit.disabled = false;
-  }
-});
+    if (busy) return;
+
+    const email = (resetForm.elements["reset-email"]?.value || "").trim();
+    const password = resetForm.elements["new-password"]?.value || "";
+    const confirmPassword =
+      resetForm.elements["confirm-password"]?.value || "";
+
+    const resetSubmit = resetForm.querySelector('button[type="submit"]');
+
+    clearInvalidInputs();
+
+    if (password.length < 8 || password.length > 128) {
+      status.textContent = "Password must contain 8-128 characters.";
+      status.className = "status-invalid";
+      if (resetForm.elements["new-password"]) {
+        resetForm.elements["new-password"].classList.add("input-invalid");
+        resetForm.elements["new-password"].focus();
+      }
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      status.textContent = "New passwords do not match.";
+      status.className = "status-invalid";
+
+      if (resetForm.elements["confirm-password"]) {
+        resetForm.elements["confirm-password"].classList.add("input-invalid");
+        resetForm.elements["confirm-password"].focus();
+      }
+
+      return;
+    }
+
+    busy = true;
+    if (resetSubmit) resetSubmit.disabled = true;
+
+    status.textContent = "Updating your password...";
+    status.className = "";
+
+    try {
+      await accountRequest("resetPassword", {
+        email,
+        password,
+      });
+
+      if (resetSection) {
+        resetSection.hidden = true;
+      }
+      form.hidden = false;
+      if (forgotRow) {
+        forgotRow.hidden = false;
+      }
+
+      const tabs = document.querySelector(".account-tabs");
+      if (tabs) tabs.hidden = false;
+      const kicker = document.querySelector("#account-kicker");
+      if (kicker) kicker.hidden = false;
+      const title = document.querySelector("#account-title");
+      if (title) title.hidden = false;
+      const desc = document.querySelector("#account-description");
+      if (desc) desc.hidden = false;
+      const acctSwitch = document.querySelector("#account-switch");
+      if (acctSwitch) acctSwitch.hidden = false;
+
+      const socialContainer =
+        document.querySelector("#social-auth-container") ||
+        document.querySelector(".social-auth-container");
+
+      if (socialContainer) {
+        socialContainer.hidden = false;
+      }
+
+      resetForm.reset();
+
+      setMode("login");
+
+      if (form.elements.email) {
+        form.elements.email.value = email;
+      }
+
+      status.textContent =
+        "Password reset successful! Please log in with your new password.";
+
+      status.className = "status-success";
+
+      if (form.elements.password) {
+        form.elements.password.focus();
+      }
+    } catch (error) {
+      status.textContent = error.message;
+      status.className = "status-invalid";
+      if (resetForm.elements["reset-email"]) {
+        resetForm.elements["reset-email"].classList.add("input-invalid");
+      }
+    } finally {
+      busy = false;
+      if (resetSubmit) resetSubmit.disabled = false;
+    }
+  });
+}
 
 // LOGOUT
 

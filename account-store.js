@@ -343,7 +343,7 @@
       .toLowerCase();
 
     if (!normalizedEmail) {
-      throw new Error("Please enter your registered email address.");
+      throw new Error("Please enter your registered email address or username.");
     }
 
     if (
@@ -355,13 +355,19 @@
     }
 
     const accounts = read();
-    const account = accounts.find((item) => item.email === normalizedEmail);
+    const account = accounts.find(
+      (item) =>
+        item.email === normalizedEmail ||
+        (item.name && item.name.toLowerCase() === normalizedEmail),
+    );
 
     if (!account) {
-      throw new Error("No account found with this email address.");
+      throw new Error("No account found with this email or username.");
     }
 
-    const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+    const saltBytes = globalThis.crypto?.getRandomValues
+      ? crypto.getRandomValues(new Uint8Array(16))
+      : Array.from({ length: 16 }, () => Math.floor(Math.random() * 256));
     const salt = hex(saltBytes);
     const passwordHash = await derive(password, salt);
 
